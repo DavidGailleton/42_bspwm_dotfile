@@ -1,5 +1,0 @@
-filetype: shell
-
-detect:
-  filename: "(bspwmrc|\\.bspwmrc)"
-  header: "#!/.*sh"
