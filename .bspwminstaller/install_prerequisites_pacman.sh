@@ -167,7 +167,7 @@ ask_rice() {
 
 ask_browser() {
   printf "\nWhich browser do you want to install? (default: brave)\n"
-  printf "  1) brave\n  2) firefox\n  3) chromium\n  4) google-chrome\n"
+  printf "  1) brave\n  2) firefox\n  3) chromium\n  4) google-chrome\n 5) Zen\n"
   printf "Enter number [1]: "
   read -r browser_choice </dev/tty || true
   case "$browser_choice" in
@@ -187,6 +187,10 @@ ask_browser() {
     BROWSER_PKG="google-chrome"
     BROWSER_BIN="google-chrome-stable"
     ;;
+  4 | google-chrome)
+    BROWSER_PKG="Zen"
+    BROWSER_BIN="zen-browser-bin"
+    ;;
   *)
     BROWSER_PKG="brave-bin"
     BROWSER_BIN="brave"
@@ -202,7 +206,8 @@ ask_terminal() {
   read -r term_choice </dev/tty || true
   case "$term_choice" in
   1 | "" | alacritty) TERM_BIN="alacritty" ;;
-  2 | st) TERM_BIN="st" ;;
+  2 | kitty) TERM_BIN="kitty" ;;
+  3 | st) TERM_BIN="st" ;;
   *) TERM_BIN="alacritty" ;;
   esac
   info "Terminal selected: $TERM_BIN"
@@ -214,30 +219,6 @@ patch_makepkg() {
     sudo sed -i 's/|| (( EUID == 0 ))//' /usr/bin/makepkg
     info "makepkg root check patched."
   fi
-}
-
-aur_install() {
-  local pkg="$1"
-  info "Building AUR package: $pkg"
-  rm -rf "/tmp/$pkg"
-  git clone "https://aur.archlinux.org/${pkg}.git" "/tmp/$pkg"
-  (cd "/tmp/$pkg" && makepkg -si --noconfirm)
-  rm -rf "/tmp/$pkg"
-}
-
-add_chaotic_repo() {
-  if grep -q '\[chaotic-aur\]' /etc/pacman.conf 2>/dev/null; then
-    info "chaotic-aur already configured."
-    return
-  fi
-  info "Adding chaotic-aur repository..."
-  sudo pacman-key --recv-key 3056513887B78AEB --keyserver keyserver.ubuntu.com
-  sudo pacman-key --lsign-key 3056513887B78AEB
-  sudo pacman -U --noconfirm --needed 'https://cdn-mirror.chaotic.cx/chaotic-aur/chaotic-keyring.pkg.tar.zst'
-  sudo pacman -U --noconfirm --needed 'https://cdn-mirror.chaotic.cx/chaotic-aur/chaotic-mirrorlist.pkg.tar.zst'
-  echo -e '\n[chaotic-aur]\nInclude = /etc/pacman.d/chaotic-mirrorlist' | sudo tee -a /etc/pacman.conf
-  sudo pacman -Sy --noconfirm
-  info "chaotic-aur added."
 }
 
 add_gh0stzk_repo() {
@@ -273,9 +254,20 @@ sudo pacman -Syu --noconfirm
 info "Installing base-devel and git..."
 sudo pacman -S --needed --noconfirm base-devel git
 
-# ── Chaotic-AUR + gh0stzk custom repo ────────────────────────────────────────
-add_chaotic_repo
+# ── gh0stzk custom repo ────────────────────────────────────────
 add_gh0stzk_repo
+
+# ── yay install ────────────────────────────────────────────────────────────────
+info "Running yay install"
+sudo pacman -Rs yay yay-git
+pacman -S --needed git base-devel
+ACT_DIR=$(pwd)
+cd /tmp
+git clone https://aur.archlinux.org/yay.git
+cd yay
+makepkg -si
+cd $ACT_DIR
+yay
 
 # ── Core WM ──────────────────────────────────────────────────────────────────
 info "Installing core WM packages..."
@@ -300,7 +292,7 @@ sudo pacman -S --needed --noconfirm \
 # ── Terminals ────────────────────────────────────────────────────────────────
 info "Installing terminals and launcher..."
 sudo pacman -S --needed --noconfirm \
-  alacritty \
+  $TERM_BIN \
   jgmenu
 
 # Write chosen terminal to .term config
@@ -418,21 +410,20 @@ sudo pacman -S --needed --noconfirm clipcat
 info "Installing picom..."
 sudo pacman -S --needed --noconfirm picom
 
-# ── eww-git (chaotic-aur prebuilt) ───────────────────────────────────────────
-info "Installing eww from chaotic-aur..."
-sudo pacman -S --needed --noconfirm eww
-
 # ── AUR packages ──────────────────────────────────────────────────────────────
 patch_makepkg
 
+info "Installing eww from aur..."
+yay -S --needed --noconfirm eww
+
 info "Installing xwinwrap-0.9-bin (AUR)..."
-aur_install xwinwrap-0.9-bin
+yay -S xwinwrap-0.9-bin
 
 info "Installing fzf-tab-git (AUR)..."
-aur_install fzf-tab-git
+yay -S fzf-tab-git
 
 info "Installing ttf-material-design-icons (AUR)..."
-aur_install ttf-material-design-icons-desktop-git
+yay -S ttf-material-design-icons-desktop-git
 
 # ── Bundled fonts ─────────────────────────────────────────────────────────────
 info "Copying bundled fonts to ~/.local/share/fonts..."
@@ -449,7 +440,7 @@ fi
 
 # ── Browser ──────────────────────────────────────────────────────────────────
 info "Installing browser: $BROWSER_PKG..."
-sudo pacman -S --needed --noconfirm "$BROWSER_PKG"
+sudo yay -S --needed --noconfirm "$BROWSER_PKG"
 
 # Patch sxhkdrc (super+w) and OpenApps (--browser) with chosen browser
 DOTFILES_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
