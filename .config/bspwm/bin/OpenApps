@@ -79,7 +79,7 @@ case "$1" in
 		Term --micro
 		;;
 	--editor)
-		code
+		Term --nvim
 		;;
 	--telegram)
 		telegram-desktop

@@ -61,7 +61,7 @@ super + e
 
 # Code (editor)
 super + c
-	code .
+	Term --nvim
 
 # Apps (browser, editor, filemanager)
 # super + {b,e,f}
