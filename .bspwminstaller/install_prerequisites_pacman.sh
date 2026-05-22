@@ -233,6 +233,38 @@ add_gh0stzk_repo() {
   info "gh0stzk-dotfiles repo added."
 }
 
+add_yay() {
+  info "Removing existing yay installation if present..."
+
+  pacman -Qi yay >/dev/null 2>&1 && sudo pacman -Rns --noconfirm yay || true
+  pacman -Qi yay-git >/dev/null 2>&1 && sudo pacman -Rns --noconfirm yay-git || true
+
+  info "Reinstalling required build tools..."
+  sudo pacman -S --needed --noconfirm base-devel git
+
+  patch_makepkg
+
+  local tmpdir oldpwd
+  oldpwd="$(pwd)"
+  tmpdir="$(mktemp -d)"
+
+  info "Cloning and rebuilding yay..."
+  git clone https://aur.archlinux.org/yay.git "$tmpdir/yay" || error "Failed to clone yay"
+  cd "$tmpdir/yay" || error "Cannot enter yay source dir"
+
+  makepkg -si --noconfirm || {
+    cd "$oldpwd" || cd /
+    rm -rf "$tmpdir"
+    error "Failed to build yay"
+  }
+
+  cd "$oldpwd" || cd /
+  rm -rf "$tmpdir"
+
+  command -v yay >/dev/null 2>&1 || error "yay reinstall failed"
+  info "yay reinstalled successfully."
+}
+
 # ── Interactive setup (ask before any installs) ───────────────────────────────
 ask_editor
 ask_browser
@@ -258,20 +290,11 @@ sudo pacman -S --needed --noconfirm base-devel git
 add_gh0stzk_repo
 
 # ── yay install ────────────────────────────────────────────────────────────────
-info "Running yay install"
-sudo pacman -Rs yay yay-git
-pacman -S --needed git base-devel
-ACT_DIR=$(pwd)
-cd /tmp
-git clone https://aur.archlinux.org/yay.git
-cd yay
-makepkg -si
-cd $ACT_DIR
-yay
+add_yay
 
 # ── Core WM ──────────────────────────────────────────────────────────────────
 info "Installing core WM packages..."
-sudo pacman -S --needed --noconfirm \
+yay -S --needed --noconfirm \
   bspwm \
   sxhkd \
   polybar \
@@ -414,16 +437,16 @@ sudo pacman -S --needed --noconfirm picom
 patch_makepkg
 
 info "Installing eww from aur..."
-yay -S --needed --noconfirm eww
+yay -S --needed --noconfirm eww-git
 
 info "Installing xwinwrap-0.9-bin (AUR)..."
-yay -S xwinwrap-0.9-bin
+yay -S --needed --noconfirm xwinwrap-0.9-bin
 
 info "Installing fzf-tab-git (AUR)..."
-yay -S fzf-tab-git
+yay -S --needed --noconfirm fzf-tab-git
 
 info "Installing ttf-material-design-icons (AUR)..."
-yay -S ttf-material-design-icons-desktop-git
+yay -S --needed --noconfirm ttf-material-design-icons-desktop-git
 
 # ── Bundled fonts ─────────────────────────────────────────────────────────────
 info "Copying bundled fonts to ~/.local/share/fonts..."
@@ -440,7 +463,7 @@ fi
 
 # ── Browser ──────────────────────────────────────────────────────────────────
 info "Installing browser: $BROWSER_PKG..."
-sudo yay -S --needed --noconfirm "$BROWSER_PKG"
+yay -S --needed --noconfirm "$BROWSER_PKG"
 
 # Patch sxhkdrc (super+w) and OpenApps (--browser) with chosen browser
 DOTFILES_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
@@ -517,4 +540,3 @@ info "All prerequisites installed."
 warn "Note: This config was built for a 42 school junest environment."
 warn "      ft_lock (/host/usr/share/42/ft_lock) is 42-specific and won't exist elsewhere."
 warn "      The lock button in the eww profilecard will need to be changed for non-42 use."
-
