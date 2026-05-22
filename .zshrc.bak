@@ -187,13 +187,12 @@ alias cat="bat --theme=base16"
 alias ls='eza --icons=always --color=always -a'
 alias ll='eza --icons=always --color=always -la'
 
-alias conf_zsh="micro ~/.zshrc"
-alias conf_keybinds="micro ~/.config/bspwm/config/sxhkdrc"
-alias conf_general="micro ~/.config/bspwm/bspwmrc"
-alias conf_picom="micro ~/.config/bspwm/config/picom.conf"
-alias conf_picomanim="micro ~/.config/bspwm/config/picom-animations.conf"
-alias conf_topbar='micro "$HOME/.config/bspwm/rices/$(cat "$HOME/.config/bspwm/.rice")/config.ini"'
-alias conf_micro="micro $HOME/.config/micro/settings.json"
+alias conf_zsh="nvim ~/.zshrc"
+alias conf_keybinds="nvim ~/.config/bspwm/config/sxhkdrc"
+alias conf_general="nvim ~/.config/bspwm/bspwmrc"
+alias conf_picom="nvim ~/.config/bspwm/config/picom.conf"
+alias conf_picomanim="nvim ~/.config/bspwm/config/picom-animations.conf"
+alias conf_topbar='nvim "$HOME/.config/bspwm/rices/$(cat "$HOME/.config/bspwm/.rice")/config.ini"'
 
 #  ┌─┐┬ ┬┌┬┐┌─┐  ┌─┐┌┬┐┌─┐┬─┐┌┬┐
 #  ├─┤│ │ │ │ │  └─┐ │ ├─┤├┬┘ │
